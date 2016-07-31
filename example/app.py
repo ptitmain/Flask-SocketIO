@@ -105,6 +105,12 @@ def test_connect():
 def test_disconnect():
     print('Client disconnected', request.sid)
 
+@socketio.on('move', namespace='/test')
+def move(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    print("Moving !!!")
+    emit('my response', {'data': 'kkkk', 'count': 0}, broadcast=True)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
