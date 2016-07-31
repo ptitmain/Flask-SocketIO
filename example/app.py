@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from flask import Flask, render_template, session, request
+from flask import Flask, render_template, session, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 
@@ -20,14 +20,16 @@ def background_thread():
     while True:
         socketio.sleep(10)
         count += 1
-        socketio.emit('my response',
-                      {'data': 'Server generated event', 'count': count},
-                      namespace='/test')
+        socketio.emit('my response', {'data': 'Server generated event', 'count': count}, namespace='/test')
 
 
 @app.route('/')
 def index():
     return render_template('index.html', async_mode=socketio.async_mode)
+
+@app.route('/res/<path:path>')
+def send_js(path):
+    return send_from_directory('res', path)
 
 
 @socketio.on('my event', namespace='/test')
@@ -109,7 +111,7 @@ def test_disconnect():
 def move(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print("Moving !!!")
-    emit('my response', {'data': 'kkkk', 'count': 0}, broadcast=True)
+    emit('my response', {'data': message['data'], 'count': 0}, broadcast=True)
 
 
 if __name__ == '__main__':
