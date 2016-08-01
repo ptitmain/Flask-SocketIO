@@ -2,6 +2,7 @@
 from flask import Flask, render_template, session, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
+import json
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -12,7 +13,11 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
-
+#dataf = open('data.json')
+with open('data.json') as dataf: 
+#data = dataf.read()
+    data = json.load(dataf)
+dataf.close()
 
 def background_thread():
     """Example of how to send server generated events to clients."""
@@ -20,7 +25,8 @@ def background_thread():
     while True:
         socketio.sleep(10)
         count += 1
-        socketio.emit('my response', {'data': 'Server generated event', 'count': count}, namespace='/test')
+        #socketio.emit('my response', {'data': 'Server generated event', 'count': count}, namespace='/test')
+        socketio.emit('players', {'data': data}, namespace='/test')
 
 
 @app.route('/')

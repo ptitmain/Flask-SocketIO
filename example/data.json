@@ -1,0 +1,15 @@
+{
+"players":
+[
+{ "name": "JF", "type": "player" },
+{ "name": "Burz", "type": "player" },
+{ "name": "Bob", "type": "npc" },
+{ "name": "Robert", "type": "npc" }
+],
+"coord":
+{
+"JF" :{"x":10, "y": 180},
+"Burz": {"x": 100, "y": 100},
+"Bob": {"x": 200, "y": 100}
+}
+}
