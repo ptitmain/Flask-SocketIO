@@ -3,6 +3,7 @@
 function SimpleDiskParticle(posX, posY) {
 		this.x = posX;
 		this.y = posY;
+		this.zmap = 0;
 		this.velX = 0;
 		this.velY = 0;
 		this.accelX = 0;
