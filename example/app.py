@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 import json
 from io import StringIO
+import os.path
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -14,7 +15,11 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
-with open('data.json') as dataf: 
+if os.path.isfile('data-save.json'):
+    datafile = 'data-save.json'
+else:
+    datafile = 'data.json' 
+with open(datafile) as dataf: 
     dataplayers = json.load(dataf)
 dataf.close()
 
@@ -26,6 +31,8 @@ def background_thread():
         count += 1
         #socketio.emit('my response', {'data': str(dataplayers)}, namespace='/test')
         socketio.emit('players', {'data': dataplayers}, namespace='/test')
+        with open('data-save.json', 'w') as outfile:
+            json.dump(dataplayers, outfile)
 
 
 @app.route('/')
@@ -83,7 +90,7 @@ def close(message):
 def send_room_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('my response',
-         {'data': message['data'], 'count': session['receive_count']},
+         {'data': message['room'] + ': ' + message['data'], 'count': session['receive_count']},
          room=message['room'])
 
 
@@ -121,11 +128,7 @@ def move(message):
     #f.write(str(newposition))
     #f.close()
     name = newposition['name']
-    if (name in dataplayers['coord']):
-      playerposition = dataplayers['coord'][name]['x'] = newposition['x']
-      playerposition = dataplayers['coord'][name]['y'] = newposition['y']
-    else:
-      dataplayers['coord'][name] = {'x': newposition['x'], 'y': newposition['y']}
+    dataplayers['coord'][name] = {'x': newposition['x'], 'y': newposition['y'], 'zmap': newposition['zmap']}
       
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ function SimpleDiskParticle(posX, posY) {
 		this.color = "#FF0000";
 		this.radius = 10;
 		this.name = 'JFL';
+		this.type = '';
 }
 
 //The function below returns a Boolean value representing whether the point with the coordinates supplied "hits" the particle.

@@ -21,6 +21,16 @@ var mapNb = 1;
 var maps = {1 : 'res/846205Nightprowler.jpg', 2 : 'res/mliuej-plan-parchemin.jpg'};
 
 $(document).ready(function() {
+
+    // Toggle Game Master
+    $('#gm').change(function(){ 
+		    $('#form-group').toggle();
+		    if(this.checked) 
+		    socket.emit('join', {room: 'GM'});
+		    else
+		    socket.emit('leave', {room: 'GM'});
+  });
+
 		// Use a "/test" namespace.
 		// An application can open a connection on multiple namespaces, and
 		// Socket.IO will multiplex all those connections on a single
@@ -45,9 +55,13 @@ $(document).ready(function() {
 		// to the client. The data is then displayed in the "Received"
 		// section of the page.
 		socket.on('my response', function(msg) {
-				$('#log').prepend('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+				if (msg.data.startsWith("GM:"))
+				$('#log').prepend('<br><font color="red">' + $('<div/>').text(msg.data).html() + "</font>");
+				else
+				$('#log').prepend('<br>' + $('<div/>').text('All #' + msg.count + ': ' + msg.data).html());
 				});
 
+		// Event handler for the broadcasts of all player positions
 		socket.on('players', function(msg) {
 				for (var eachplayer in msg.data.players)
 				{
@@ -57,7 +71,7 @@ $(document).ready(function() {
 				var x,y;
 				if (!coord)
 				{
-				x = 10; y = 10; zmap = 1;
+				x = 10; y = 10; zmap = 0;
 				}
 				else
 				{
@@ -83,6 +97,27 @@ $(document).ready(function() {
 					targetY = y;
 				}
 
+				// Updating player list
+          			// ====================
+				var existsInListOfPlayers = searchInNowherePlayers(playername);
+				// If the player has no map
+				if (shapes[nbPlayer].zmap != mapNb)
+				{
+					var nowhereplayer = document.getElementById('nowhereplayer');
+					//$("#nowhereplayer").empty();
+
+					if (!existsInListOfPlayers)
+						$('#nowhereplayer').append($('<option>', { value: playername, text : playername }));
+				}
+				else
+				{
+					if (existsInListOfPlayers)
+						$('#nowhereplayer option[value=' + playername + ']').remove();
+						
+					
+				}
+ 				// End of update of player list
+				// ============================
 				} // End of iteration over all player positions
 				drawScreen(); 
 				drawShapes(); 
@@ -119,6 +154,7 @@ $(document).ready(function() {
 				});
 		$('form#broadcast').submit(function(event) {
 				socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
+				$('#broadcast_data').val("");
 				return false;
 				});
 		$('form#join').submit(function(event) {
@@ -130,7 +166,8 @@ $(document).ready(function() {
 				return false;
 				});
 		$('form#send_room').submit(function(event) {
-				socket.emit('my room event', {room: $('#room_name').val(), data: $('#room_data').val()});
+				socket.emit('my room event', {room: 'GM', data: $('#room_data').val()});
+				$('#room_data').val("");
 				return false;
 				});
 		$('form#close').submit(function(event) {
@@ -141,8 +178,21 @@ $(document).ready(function() {
 				socket.emit('disconnect request');
 				return false;
 				});
+		$('form#putonmap').submit(function(event) {
+				var position = '{"name" : "' + document.getElementById('nowhereplayer').value + '", "x" : 30, "y" : 30, "zmap" : ' + mapNb +'}';
+				socket.emit('move', {data: position});
+				return false;
+				});
 
-
+		function searchInNowherePlayers(playername)
+		{
+			for(var i = 0, opts = document.getElementById('nowhereplayer').options; i < opts.length; ++i)
+					{
+						if (opts[i].value == playername)
+							return true;
+					}
+					return false;
+		}
 
 		//For debug messages
 		var Debugger = function() { };
@@ -192,13 +242,20 @@ $(document).ready(function() {
 			tempA = 0.7;
 
 			//randomly select either a circle or a square
-			if (type == "player") {
+			if (type == "player1") {
 				tempR = 78;
 				tempG = 245;
 				tempB = 84;
 				tempShape = new SimpleDiskParticle(x, y);
 			}
-			else {
+			else if (type == "player2") {
+				tempR = 0;
+				tempG = 255;
+				tempB = 255;
+				tempShape = new SimpleDiskParticle(x, y);
+			}
+			else 
+			{
 				tempR = 245;
 				tempG = 75;
 				tempB = 86;
@@ -209,6 +266,7 @@ $(document).ready(function() {
 			tempShape.color = tempColor;
 			tempShape.radius = tempRad;
 			tempShape.name = name;
+			tempShape.type = type;
 			shapes.push(tempShape);
 			numShapes = numShapes + 1;
 
@@ -333,7 +391,13 @@ $(document).ready(function() {
 			}
 
 			var dragIndex = getClickedShape(evt);
-                        var position = '{"name" : "' + shapes[dragIndex].name + '", "x" : ' + shapes[dragIndex].x + ', "y" : ' + shapes[dragIndex].y + '}';
+                        var position = '{"name" : "' + shapes[dragIndex].name + '", "x" : ' + shapes[dragIndex].x + ', "y" : ' + shapes[dragIndex].y + ', "zmap" : ' + shapes[dragIndex].zmap +'}';
+			
+			// Eventually delete action
+			if (shapes[dragIndex].x<+50 && shapes[dragIndex].y>550-50)
+			{
+                        	position = '{"name" : "' + shapes[dragIndex].name + '", "x" : 30, "y" : 30, "zmap" : 0 }';
+			}
 			socket.emit('move', {data: position});
 		}
 
@@ -371,7 +435,10 @@ $(document).ready(function() {
 				{
 					//the drawing of the shape is handled by a function inside the external class.
 				//we must pass as an argument the context to which we are drawing the shape.
-					shapes[i].drawToContext(context);
+
+					// We draw for Game Master or if real players
+					if ($('#gm').attr('checked') == true || shapes[i].type != "npc")
+						shapes[i].drawToContext(context);
 				}
 			}
 		}
@@ -395,6 +462,7 @@ $(document).ready(function() {
 				mapNb = 1
 		
 			drawScreen();
+			$("#nowhereplayer").empty();
 		}
 		var button = document.getElementById("mapb");
 		button.addEventListener("click", changeMap); 
@@ -410,7 +478,6 @@ position: absolute;
 left: 370px; 
 top: 50px;
      	  },
-    
   </style>
 
 </head>
@@ -425,13 +492,13 @@ top: 50px;
         <input type="submit" value="Echo">
     </form>
     -->
-    <form id="map" method="POST" action="#">
-	<input type="button" value="Change Map" id="mapb"/>
-    </form>
+
+
     <form id="broadcast" method="POST" action='#'>
-        <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">
-        <input type="submit" value="Broadcast">
+        <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message" size="32" autocomplete="off"><br/>
+        <input type="submit" value="To All Players">
     </form>
+    <!--
     <form id="join" method="POST" action='#'>
         <input type="text" name="join_room" id="join_room" placeholder="Room Name">
         <input type="submit" value="Join Room">
@@ -440,23 +507,43 @@ top: 50px;
         <input type="text" name="leave_room" id="leave_room" placeholder="Room Name">
         <input type="submit" value="Leave Room">
     </form>
+    -->
+    <input type="checkbox" id="gm">Game Master
+<div id="form-group" style="display:none">
     <form id="send_room" method="POST" action='#'>
-        <input type="text" name="room_name" id="room_name" placeholder="Room Name"><br/>
-        <input type="text" name="room_data" id="room_data" placeholder="Message">
-        <input type="submit" value="Send to Room">
+        <input type="hidden" name="room_name" id="room_name" value="MJ">
+        <input type="text" name="room_data" id="room_data" placeholder="Message" size="32" autocomplete="off"><br/>
+        <input type="submit" value="To Game Masters">
     </form>
+    <!--
     <form id="close" method="POST" action="#">
         <input type="text" name="close_room" id="close_room" placeholder="Room Name">
         <input type="submit" value="Close Room">
     </form>
+    -->
+    <form id="map" method="POST" action="#">
+	<input type="button" value="Change Map" id="mapb"/>
+    </form>
+
+
+    <form id="putonmap" method="POST" action="#">
+        <select id="nowhereplayer" name="name" size="1">
+	</select>
+        <input type="submit" value="goes to this map!">
+    </form>
+    
+</div>
+    <!--
     <form id="disconnect" method="POST" action="#">
         <input type="submit" value="Disconnect">
     </form>
+    -->
     <h2>Receive:</h2>
-    <div id="log" style="height:200px;width:300px; overflow-y:auto;overflow-x: hidden;"></div>
+    <div id="log" style="height:500px;width:370px; overflow-y:auto;overflow-x: hidden;"></div>
 
 <canvas id="canvasOne" width="1280" height="576">
 Your browser does not support HTML5 canvas.
 </canvas>
+<img src="res/corb.png" style="position:absolute; left: 370px; top: 600px;" width="50px"/>
 </body>
 </html>

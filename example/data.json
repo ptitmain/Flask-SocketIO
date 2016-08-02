@@ -1,8 +1,14 @@
 {
 "players":
 [
-{ "name": "JF", "type": "player" },
-{ "name": "Burz", "type": "player" },
+{ "name": "JF", "type": "player1" },
+{ "name": "Celine", "type": "player1" },
+{ "name": "Sylvie", "type": "player1" },
+{ "name": "Gugu", "type": "player2" },
+{ "name": "Burz", "type": "player2" },
+{ "name": "Mat", "type": "player2" },
+{ "name": "Sioc", "type": "player1" },
+{ "name": "Cris", "type": "player2" },
 { "name": "Bob", "type": "npc" },
 { "name": "Robert", "type": "npc" }
 ],
