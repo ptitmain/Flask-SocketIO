@@ -3,6 +3,7 @@ from flask import Flask, render_template, session, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 import json
+from io import StringIO
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -13,10 +14,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
-#dataf = open('data.json')
 with open('data.json') as dataf: 
-#data = dataf.read()
-    data = json.load(dataf)
+    dataplayers = json.load(dataf)
 dataf.close()
 
 def background_thread():
@@ -25,8 +24,8 @@ def background_thread():
     while True:
         socketio.sleep(10)
         count += 1
-        #socketio.emit('my response', {'data': 'Server generated event', 'count': count}, namespace='/test')
-        socketio.emit('players', {'data': data}, namespace='/test')
+        #socketio.emit('my response', {'data': str(dataplayers)}, namespace='/test')
+        socketio.emit('players', {'data': dataplayers}, namespace='/test')
 
 
 @app.route('/')
@@ -116,9 +115,18 @@ def test_disconnect():
 @socketio.on('move', namespace='/test')
 def move(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    print("Moving !!!")
-    emit('my response', {'data': message['data'], 'count': 0}, broadcast=True)
-
+    newposition = json.load(StringIO(message['data']))
+    #emit('my response', {'data': message['data'], 'count': 0}, broadcast=True)
+    #f = open("log", "w")
+    #f.write(str(newposition))
+    #f.close()
+    name = newposition['name']
+    if (name in dataplayers['coord']):
+      playerposition = dataplayers['coord'][name]['x'] = newposition['x']
+      playerposition = dataplayers['coord'][name]['y'] = newposition['y']
+    else:
+      dataplayers['coord'][name] = {'x': newposition['x'], 'y': newposition['y']}
+      
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

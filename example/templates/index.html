@@ -47,32 +47,40 @@ $(document).ready(function() {
 				});
 
 		socket.on('players', function(msg) {
-				$('#log').prepend('<br>' + $('<div/>').text('LOG' + msg.data).html());
-				$('#log').prepend('<br>' + $('<div/>').text('COOR' + msg.data.coord["JF"].x).html());
-				for (var i in msg.data.players)
+				for (var eachplayer in msg.data.players)
 				{
- 				var playername = msg.data.players[i].name;
- 				var playertype = msg.data.players[i].type;
+				var playername = msg.data.players[eachplayer].name;
+				var playertype = msg.data.players[eachplayer].type;
 				var coord = msg.data.coord[playername];
 				var x,y;
-                                if (!coord)
+				if (!coord)
 				{
 				x = 10; y = 10;
 				}
 				else
 				{
-					x = msg.data.coord[playername].x;
-					y = msg.data.coord[playername].y;
-			        }
-				var alreadyExist = false;
-				for (i=0; i < numShapes; i++) {
-					if (shapes[i].name == playername)
-						alreadyExist = true;
-				}
-				if (! alreadyExist)
-					makeShape(playername, x, y, playertype);
+				x = msg.data.coord[playername].x;
+				y = msg.data.coord[playername].y;
 				}
 
+				nbPlayer = getShapeForPlayer(playername,playertype);
+				//$('#log').prepend('<br>' + $('<div/>').text('XY: ' + playername +  x + '/' + y).html());
+
+				// updating coordinate
+				shapes[nbPlayer].x = x;
+				shapes[nbPlayer].y = y;
+				// Workaround:
+				// Due to the algorithm for refreshing the last shape in the array
+				// and because of TimerClick frequent updates
+				// we need to update the global variable targetX and targetY
+				if (nbPlayer == numShapes - 1)
+				{
+					targetX = x;
+					targetY = y;
+				}
+
+				} // End of iteration over all player positions
+				drawScreen(); 
 				drawShapes(); 
 				});
 		// Interval function that tests message latency by sending a "ping"
@@ -147,6 +155,20 @@ $(document).ready(function() {
 			return Modernizr.canvas;
 		}
 
+		function getShapeForPlayer(name, playertype) {
+			for (i=0; i < numShapes; i++) {
+				if (shapes[i].name == name)
+				{
+					return i;
+				}
+			}
+
+			// Cannot be found ! Creating !
+			makeShape(name, 10, 10, playertype);
+			return getShapeForPlayer(name, playertype);
+ 
+		}
+
 		function makeShape(name, x, y, type) {
 			var i;
 			var tempX;
@@ -158,29 +180,35 @@ $(document).ready(function() {
 			var tempA;
 			var tempColor;
 
-			tempRad = 5 + Math.floor(Math.random()*20);
+			tempRad = 15;
 
 			//we set a randomized color, including a random alpha (transparency) value.
 			//The color is set using the rgba() method.
-			tempR = Math.floor(Math.random()*255);
-			tempG = Math.floor(Math.random()*255);
-			tempB = Math.floor(Math.random()*255);
-			tempA = 0.3 + 0.5*Math.random();
-			tempColor = "rgba(" + tempR + "," + tempG + "," + tempB + "," + tempA + ")";
+
+			tempA = 0.7;
 
 			//randomly select either a circle or a square
 			if (type == "player") {
+				tempR = 78;
+				tempG = 245;
+				tempB = 84;
 				tempShape = new SimpleDiskParticle(x, y);
 			}
 			else {
+				tempR = 245;
+				tempG = 75;
+				tempB = 86;
 				tempShape = new SimpleSquareParticle(x, y);
 			}
 
+			tempColor = "rgba(" + tempR + "," + tempG + "," + tempB + "," + tempA + ")";
 			tempShape.color = tempColor;
 			tempShape.radius = tempRad;
 			tempShape.name = name;
 			shapes.push(tempShape);
 			numShapes = numShapes + 1;
+
+			return numShapes-1;
 		}
 
 		if (!canvasSupport()) {
@@ -216,11 +244,8 @@ $(document).ready(function() {
 			theCanvas.addEventListener("mousedown", mouseDownListener, false);
 		}
 
-
-
-		function mouseDownListener(evt) {
-			var i;
-
+		function getClickedShape(evt)
+		{
 			//getting mouse position correctly 
 			var bRect = theCanvas.getBoundingClientRect();
 			mouseX = (evt.clientX - bRect.left)*(theCanvas.width/bRect.width);
@@ -238,6 +263,16 @@ $(document).ready(function() {
 					dragIndex = i;
 				}
 			}
+
+			return dragIndex;
+}
+
+
+
+		function mouseDownListener(evt) {
+			var i;
+
+			var dragIndex = getClickedShape(evt);
 
 			if (dragging) {
 				window.addEventListener("mousemove", mouseMoveListener, false);
@@ -293,7 +328,9 @@ $(document).ready(function() {
 				window.removeEventListener("mousemove", mouseMoveListener, false);
 			}
 
-			socket.emit('move', {data: "Moving !"});
+			var dragIndex = getClickedShape(evt);
+                        var position = '{"name" : "' + shapes[dragIndex].name + '", "x" : ' + shapes[dragIndex].x + ', "y" : ' + shapes[dragIndex].y + '}';
+			socket.emit('move', {data: position});
 		}
 
 		function mouseMoveListener(evt) {
@@ -363,10 +400,12 @@ top: 50px;
     <p>Async mode is: <b>{{ async_mode }}</b></p>
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Send:</h2>
+    <!--
     <form id="emit" method="POST" action='#'>
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
     </form>
+    -->
     <form id="broadcast" method="POST" action='#'>
         <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">
         <input type="submit" value="Broadcast">
