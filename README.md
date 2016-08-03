@@ -3,10 +3,11 @@ Flask-SocketIO RPG
 
 A RPG board for helping mastering a RPG Game. It provides:
 
+- a map with player and NPC positions: all player positions are synchronized between clients
+- several maps can be used at same time (one player can be on one map only)
+- difference of color for real players and NPC
 - a chat room for broadcasting messages
 - a chat room for Game Masters for discussing private stuff
-- a map with player and NPC positions: all player positions are synchronized between clients
-- several maps can be used at same time
 
 Server is implemented in python 3. Client is web based.
 
