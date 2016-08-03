@@ -50,6 +50,14 @@ def test_message(message):
     emit('my response',
          {'data': message['data'], 'count': session['receive_count']})
 
+@socketio.on('createnpc', namespace='/test')
+def test_message(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my response',
+         {'data': 'GM: Creating NPC: ' + message['data'], 'count': session['receive_count']}, room='GM')
+    dataplayers['players'].append({'name': message['data'], 'type': 'npc'})
+
+    
 
 @socketio.on('my broadcast event', namespace='/test')
 def test_broadcast_message(message):

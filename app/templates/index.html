@@ -165,6 +165,7 @@ $(document).ready(function() {
 				socket.emit('leave', {room: $('#leave_room').val()});
 				return false;
 				});
+                // Hacked for sending to the 'GM' room only
 		$('form#send_room').submit(function(event) {
 				socket.emit('my room event', {room: 'GM', data: $('#room_data').val()});
 				$('#room_data').val("");
@@ -183,7 +184,11 @@ $(document).ready(function() {
 				socket.emit('move', {data: position});
 				return false;
 				});
-
+		$('form#createnpc').submit(function(event) {
+				socket.emit('createnpc', {data: $('#newnpcname').val()});
+				$('#newnpcname').val("");
+				return false;
+				});
 		function searchInNowherePlayers(playername)
 		{
 			for(var i = 0, opts = document.getElementById('nowhereplayer').options; i < opts.length; ++i)
@@ -531,7 +536,9 @@ top: 50px;
 	</select>
         <input type="submit" value="goes to this map!">
     </form>
-    
+    <form id="createnpc" method="POST" action='#'>
+        <input type="text" name="newnpcname" id="newnpcname" placeholder="Message" size="10" autocomplete="off"><input type="submit" value="Create NPC">
+    </form>
 </div>
     <!--
     <form id="disconnect" method="POST" action="#">
