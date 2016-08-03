@@ -4,8 +4,9 @@ Flask-SocketIO RPG
 A RPG board for helping mastering a RPG Game. It provides:
 
 - a chat room for broadcasting messages
-- a chat romm for Game Masters for discussing private stuff
-- a multi map with player and NPC positions
+- a chat room for Game Masters for discussing private stuff
+- a map with player and NPC positions: all player positions are synchronized between clients
+- several maps can be used at same time
 
 Server is implemented in python 3. Client is web based.
 
