@@ -1,37 +1,45 @@
-Flask-SocketIO
-==============
+Flask-SocketIO RPG
+==================
 
-[![Build Status](https://travis-ci.org/miguelgrinberg/Flask-SocketIO.png?branch=master)](https://travis-ci.org/miguelgrinberg/Flask-SocketIO)
+A RPG board for helping mastering a RPG Game. It provides:
 
-Socket.IO integration for Flask applications.
+- a chat room for broadcasting messages
+- a chat romm for Game Masters for discussing private stuff
+- a multi map with player and NPC positions
+
+Server is implemented in python 3. Client is web based.
+
+Implemented with Socket.IO integration for Flask applications.
 
 Installation
 ------------
 
-You can install this package as usual with pip:
+You can install the requirements as usual with pip:
 
     pip install flask-socketio
 
-Example
--------
+Usage
+-----
 
-    from flask import Flask, render_template
-    from flask_socketio import SocketIO, emit
-    
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'secret!'
-    socketio = SocketIO(app)
-    
-    @app.route('/')
-    def index():
-        return render_template('index.html')
-    
-    @socketio.on('my event')
-    def test_message(message):
-        emit('my response', {'data': 'got it!'})
-    
-    if __name__ == '__main__':
-        socketio.run(app)
+On server side:
+
+    cd app
+    python app.py
+
+On client side:
+
+    Go to http://127.0.0.1:5000/
+
+Configuration
+-------------
+
+Players and NPC can be configured in data.json. There are two entries:
+
+- players: list the full set of players with the type (player1, player2, npc)
+- coord: list a partial list of the coordinates of players (x, y, zmap (the map number))
+
+The configuration is regularly savec in data-save.json. When launched again, the data-save.json file is read instead of the initial data.json file.
+   
 
 Resources
 ---------
@@ -39,4 +47,4 @@ Resources
 - [Tutorial](http://blog.miguelgrinberg.com/post/easy-websockets-with-flask-and-gevent)
 - [Documentation](http://pythonhosted.org/Flask-SocketIO)
 - [PyPI](https://pypi.python.org/pypi/Flask-SocketIO)
-
+- [CanvasDragging](http://rectangleworld.com/blog/archives/129)
