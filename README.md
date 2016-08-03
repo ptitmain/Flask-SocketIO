@@ -11,6 +11,8 @@ Server is implemented in python 3. Client is web based.
 
 Implemented with Socket.IO integration for Flask applications.
 
+![screenshot](FS-RPG1.png)
+
 Installation
 ------------
 
